@@ -16,7 +16,7 @@ Note: the driver install buttons are on the **Virtual controller** page ("Driver
 |---|---|---|---|---|
 | 1 | Driver install (Z1/Z2) | 2026-11-07 | ✅ Pass | Both showed Downloading → Checking → UAC; rows went to "ready"; no `DSZ-install-*` folder left (verified). Installed: USBip 0.9.8.1, HidHide 1.5.230 |
 | 2 | Tamper check | 2026-11-07 | ✅ Pass | Delete and rename of the usbip-win2 installer refused while UAC/installer open |
-| 3 | Connect | | | |
+| 3 | Connect | 2026-11-07 | ✅ Pass | BT connect logged 73 ms after start (looked instant). Log: `connected DualSense over Bluetooth, MAC 0C:27:56:B7:C3:3D, firmware 6.41 · Mar 17 2026`. Board revision not logged (gap → Phase 2) |
 | 4 | Virtual DualSense | | | |
 | 5 | Game haptics | | | |
 | 6 | Speaker | | | |
