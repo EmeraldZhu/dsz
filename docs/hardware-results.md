@@ -18,7 +18,7 @@ Note: the driver install buttons are on the **Virtual controller** page ("Driver
 | 2 | Tamper check | 2026-11-07 | ✅ Pass | Delete and rename of the usbip-win2 installer refused while UAC/installer open |
 | 3 | Connect | 2026-11-07 | ✅ Pass | BT connect logged 73 ms after start (looked instant). Log: `connected DualSense over Bluetooth, MAC 0C:27:56:B7:C3:3D, firmware 6.41 · Mar 17 2026`. Board revision not logged (gap → Phase 2) |
 | 4 | Virtual DualSense | 2026-11-07 | ✅ Pass | Marvel's Spider-Man 2 (Epic, Steam closed). PS prompts; adaptive triggers while swinging; haptics in menus, footsteps, swinging; speaker plays beeps/calls (call voices on PC speakers, game routing). See issues I1, I2 |
-| 5 | Game haptics | | | |
+| 5 | Game haptics | 2026-11-07 | ✅ Pass | 0.4.6 build. Spider-Man 2, ~32 min of game audio (23:20–23:52 UTC). No ticking/gaps reported; log has zero WARN/ERROR, no underruns, no disconnects. Overlay/crashpad no longer trigger profile switches (0.4.6 fix confirmed) |
 | 6 | Speaker | | | |
 | 7 | Rumble fallback | | | |
 | 8 | Crash recovery | | | |
@@ -30,5 +30,5 @@ Note: the driver install buttons are on the **Virtual controller** page ("Driver
 
 | # | Seen in | Issue | Evidence | Status |
 |---|---|---|---|---|
-| I1 | Test 4 | Two mid-game BT drops (~50 min session) | `dsz.log` 22:01 and 22:15 UTC: `0x31` writes time out (250 ms each) for ~34 s, then "DualSense dropped the link by itself (battery 90 %)". First reconnected in 1 s, second needed the PS button. A third disconnect at 22:31 was DSZ's 15-min idle-off after the game closed (expected). Adapter: onboard MediaTek RZ616 (MT7922), Wi-Fi unused (Ethernet), BT "allow turn off to save power" on | Mitigations applied 2026-11-07: both antennas confirmed attached; BT power saving off; MediaTek BT driver 1.1147.0.613 installed; speakers are wired (Edifier M206BT on aux), so no other BT audio. Re-check in Test 5 |
+| I1 | Test 4 | Two mid-game BT drops (~50 min session) | `dsz.log` 22:01 and 22:15 UTC: `0x31` writes time out (250 ms each) for ~34 s, then "DualSense dropped the link by itself (battery 90 %)". First reconnected in 1 s, second needed the PS button. A third disconnect at 22:31 was DSZ's 15-min idle-off after the game closed (expected). Adapter: onboard MediaTek RZ616 (MT7922), Wi-Fi unused (Ethernet), BT "allow turn off to save power" on | Mitigations applied 2026-11-07: both antennas confirmed attached; BT power saving off; MediaTek BT driver 1.1147.0.613 installed; speakers are wired (Edifier M206BT on aux), so no other BT audio. Test 5: no drops in ~32 min (previous session: 2 drops in ~50 min). Keep watching in tests 6 and 10 |
 | I2 | Test 4 | Occasional faint crackle from the controller speaker | User report; no underrun warnings in the log | Check in Test 6, likely same radio pressure as I1 |
