@@ -1005,7 +1005,10 @@ fn session(s: &Arc<Shared>, listener: &TcpListener) -> bool {
         if !peer.ip().is_loopback() {
             continue;
         }
-        let _ = st.set_read_timeout(Some(Duration::from_secs(5)));
+        // The driver sends its request as soon as it connects; a short
+        // wait keeps a local client that connects and stays silent from
+        // holding up the attach for long.
+        let _ = st.set_read_timeout(Some(Duration::from_secs(1)));
         let mut op = [0u8; 8];
         if st.read_exact(&mut op).is_err() {
             continue;

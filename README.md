@@ -15,7 +15,19 @@
 - **Windows 10 or 11 only**, for the DualSense, DualSense Edge, and DualShock 4 (an official pad, Sony's USB adapter, or a common pad that speaks the DualShock 4 reports). A DualShock 4 gets buttons, sticks, gyro, the touchpad, the lightbar, and classic rumble, plus experimental speaker and headphone sound over Bluetooth (off by default). Adaptive triggers and the Bluetooth haptic stream are DualSense only.
 - **Virtual controllers need two free, open-source drivers:** usbip-win2 (the app installs 0.9.8.1, the current release; an already-installed 0.9.7.7 or 0.9.8.0 attaches too) and HidHide. The app installs either in one click (see [Drivers](#drivers)). Without them it still does lighting, triggers, haptics from system audio, mouse modes, and mappings, but games see the real controller.
 - **Close other controller apps while it runs.** Only one app can drive the controller at a time. If buttons double up or lights flicker in a Steam game, turn Steam Input off for that game.
-- **This is an early release (0.3)**, tested on one PC with a DualSense Edge over Bluetooth. DualShock 4 support has not been tried on a real DualShock 4 yet. Expect rough edges, and please report them.
+- **This is an early release (0.4.x)**, tested on one PC with a DualSense Edge over Bluetooth. See [Hardware tested](#hardware-tested). DualShock 4 support has not been tried on a real DualShock 4 yet. Expect rough edges, and please report them.
+
+## Hardware tested
+
+| Controller | Model / board | Connection | Status |
+|---|---|---|---|
+| DualSense Edge | CFI-ZCP1 | Bluetooth | Tested by the author |
+| DualSense (2025 revision) | CFI-ZCT2W / BDM-060R, firmware as shipped | Bluetooth | Pending: test plan in `docs/hardware-test-plan.md` |
+| DualShock 4 | v1 / v2 | Bluetooth | Not tried on a real pad |
+
+### Local interfaces
+
+DSZ listens only on `127.0.0.1`: the UDP mod API (port 6969, on by default, for DSX-style game mods), the DSU motion server (port 26760, off by default) and its own USB/IP server (a random port, used by usbip-win2). Any program running on this PC can send trigger and lighting commands to the mod API; turn it off in Settings if you don't use mods.
 
 ## Performance
 
