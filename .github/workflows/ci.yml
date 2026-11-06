@@ -14,10 +14,10 @@ jobs:
     name: ds-proto tests (Linux)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test -p ds-proto --release
+      - run: cargo test -p ds-proto --release --locked
 
   windows:
     name: Build and test (Windows)
@@ -27,13 +27,13 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Test
-        run: cargo test --workspace --release
+        run: cargo test --workspace --release --locked
       - name: Build release exe
-        run: cargo build --release -p dsz
+        run: cargo build --release -p dsz --locked
       - name: SHA-256
         shell: pwsh
         run: |
@@ -45,7 +45,7 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: target/release/dsz.exe
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: dsz-${{ github.sha }}
           path: |
