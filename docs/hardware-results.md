@@ -7,7 +7,7 @@ Plan: `docs/hardware-test-plan.md`.
 | Controller | Sony DualSense CFI-ZCT2W (Grey Camouflage), board BDM-060R |
 | Firmware | 6.41 · Mar 17 2026 (DSZ log, USB) |
 | PC | Windows 11 Pro 10.0.26300, Ryzen 7 7800X3D, RTX 5070 Ti, ASRock B850M Pro-A WiFi (onboard BT) |
-| DSZ build | `audit/hardening` @ 9e97f23, local `cargo build --release -p dsz --locked` |
+| DSZ build | Tests 1–4: 0.4.5 + hardening (`audit/hardening` @ 9e97f23). Tests 5+: 0.4.6 + hardening (`audit/hardening` @ 57f8f89, upstream v0.4.6 merged). Local `cargo build --release -p dsz --locked` |
 | Drivers | usbip-win2 0.9.8.1, HidHide 1.5.230 (as pinned in `install.rs`) |
 
 Note: the driver install buttons are on the **Virtual controller** page ("Drivers on this PC"), not Settings.
