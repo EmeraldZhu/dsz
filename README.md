@@ -27,7 +27,7 @@
 
 ### Local interfaces
 
-DSZ listens only on `127.0.0.1`: the UDP mod API (port 6969, on by default, for DSX-style game mods), the DSU motion server (port 26760, off by default) and its own USB/IP server (a random port, used by usbip-win2). Any program running on this PC can send trigger and lighting commands to the mod API; turn it off in Settings if you don't use mods.
+DSZ listens only on `127.0.0.1`: the UDP mod API (port 6969, for DSX-style game mods), the DSU motion server (port 26760) and its own USB/IP server (a random port, used by usbip-win2). Any program running on this PC can send trigger and lighting commands to the mod API, so it is off on new installs: turn on Settings → Game mod API to use mods. Settings saved by earlier versions keep the choice they had (on, unless changed). The DSU server is off by default.
 
 ## Performance
 

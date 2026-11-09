@@ -91,7 +91,9 @@ pub struct Settings {
     pub device_profiles: BTreeMap<String, String>,
     /// Controller MAC -> friendly name.
     pub device_names: BTreeMap<String, String>,
-    /// UDP mod API for game mods.
+    /// UDP mod API for game mods. Any local program can send it commands,
+    /// so it's off for new installs; settings saved by earlier versions
+    /// keep their value (they always stored it).
     pub udp_enabled: bool,
     pub udp_port: u16,
     pub auto_profiles: bool,
@@ -172,7 +174,7 @@ impl Default for Settings {
             default_profile: DEFAULT_PROFILE.into(),
             device_profiles: BTreeMap::new(),
             device_names: BTreeMap::new(),
-            udp_enabled: true,
+            udp_enabled: false,
             udp_port: 6969,
             auto_profiles: true,
             games: Vec::new(),
@@ -266,6 +268,19 @@ mod tests {
         assert!(saved.get("quick_charge").is_none());
         let back: Settings = serde_json::from_value(saved).unwrap();
         assert!(!back.quick_charge);
+    }
+
+    #[test]
+    fn mod_api_is_off_for_new_installs_and_a_saved_choice_is_kept() {
+        assert!(!Settings::default().udp_enabled);
+        let parsed: Settings = serde_json::from_str("{}").unwrap();
+        assert!(!parsed.udp_enabled);
+        // Every earlier version saved the key (on by default then).
+        let parsed: Settings = serde_json::from_str(r#"{"udp_enabled":true}"#).unwrap();
+        assert!(parsed.udp_enabled);
+        let on = Settings { udp_enabled: true, ..Settings::default() };
+        let back: Settings = serde_json::from_value(serde_json::to_value(&on).unwrap()).unwrap();
+        assert!(back.udp_enabled);
     }
 
     #[test]

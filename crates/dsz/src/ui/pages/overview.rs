@@ -256,7 +256,7 @@ impl App {
                 crate::i18n::tr("Profiles & games switches profiles per game. Games with native DualSense support switch to your DualSense profile without a rule."),
                 crate::i18n::tr("Close other controller apps (DS4Windows and the like) while DSZ runs; only one app can drive the controller."),
                 crate::i18n::tr("Steam Input also reads and writes the controller. If buttons double up, or lights and triggers flicker in a Steam game, turn Steam Input off for that game."),
-                crate::i18n::tr("Game mods that drive triggers and lights over UDP connect on port 6969 (Settings)."),
+                crate::i18n::tr("Game mods that drive triggers and lights over UDP need the Game mod API, which is off until you turn it on in Settings (port 6969)."),
             ] {
                 muted(ui, &format!("• {tip}"));
             }
