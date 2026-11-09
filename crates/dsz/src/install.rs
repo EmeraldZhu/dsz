@@ -9,7 +9,9 @@
 //!   attach when they are already installed.
 //! - HidHide 1.5.230: its release publishes no hash, so the installer is
 //!   pinned by the SHA-256 of the official asset *and* must carry a valid
-//!   Authenticode signature from its author (both have to pass).
+//!   Authenticode signature from its author (both have to pass). The
+//!   signing chain is checked for revocation when Windows can reach the
+//!   revocation servers.
 //!
 //! Each install downloads into its own new folder under `%TEMP%`, and the
 //! installer is held open with read-only sharing from the moment it is
@@ -256,9 +258,36 @@ pub(crate) fn sha256(data: &[u8]) -> Result<[u8; 32], String> {
     Ok(out)
 }
 
+/// The signature check could not learn whether a certificate was revoked
+/// (no network, or the revocation server didn't answer).
+const REVOCATION_UNKNOWN: [u32; 2] = [
+    0x800B_010E, // CERT_E_REVOCATION_FAILURE
+    0x8009_2013, // CRYPT_E_REVOCATION_OFFLINE
+];
+
 /// The signer's common name when `file` has a valid, trusted Authenticode
 /// signature; `None` otherwise.
+///
+/// Revocation is checked for the whole chain (except the root), so a
+/// revoked signing certificate fails. When revocation can't be checked
+/// (offline), the signature is checked without it, as before; the
+/// installer's pinned SHA-256 still has to match as well.
 pub(crate) fn signer(file: &Path) -> Option<String> {
+    match verify_signature(file, true) {
+        Ok(name) => name,
+        Err(rc) if REVOCATION_UNKNOWN.contains(&rc) => {
+            log::warn!(
+                "{}: certificate revocation couldn't be checked (0x{rc:08X}); checking the signature without it",
+                file.display()
+            );
+            verify_signature(file, false).ok().flatten()
+        }
+        Err(_) => None,
+    }
+}
+
+/// WinVerifyTrust on `file`: the signer's name when trusted, or the error.
+fn verify_signature(file: &Path, revocation: bool) -> Result<Option<String>, u32> {
     use windows_sys::Win32::Security::Cryptography::{CertGetNameStringW, CERT_NAME_SIMPLE_DISPLAY_TYPE};
     use windows_sys::Win32::Security::WinTrust::*;
     let path = wide_path(file);
@@ -268,7 +297,12 @@ pub(crate) fn signer(file: &Path) -> Option<String> {
     let mut wd: WINTRUST_DATA = unsafe { std::mem::zeroed() };
     wd.cbStruct = std::mem::size_of::<WINTRUST_DATA>() as u32;
     wd.dwUIChoice = WTD_UI_NONE;
-    wd.fdwRevocationChecks = WTD_REVOKE_NONE;
+    if revocation {
+        wd.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
+        wd.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT;
+    } else {
+        wd.fdwRevocationChecks = WTD_REVOKE_NONE;
+    }
     wd.dwUnionChoice = WTD_CHOICE_FILE;
     wd.Anonymous.pFile = &mut fi;
     wd.dwStateAction = WTD_STATEACTION_VERIFY;
@@ -305,7 +339,7 @@ pub(crate) fn signer(file: &Path) -> Option<String> {
                 }
             }
         }
-    } else {
+    } else if !(revocation && REVOCATION_UNKNOWN.contains(&(rc as u32))) {
         log::warn!("{}: signature check failed (0x{:08X})", file.display(), rc as u32);
     }
     wd.dwStateAction = WTD_STATEACTION_CLOSE;
@@ -316,7 +350,11 @@ pub(crate) fn signer(file: &Path) -> Option<String> {
             &mut wd as *mut _ as *mut std::ffi::c_void,
         )
     };
-    name
+    if rc == 0 {
+        Ok(name)
+    } else {
+        Err(rc as u32)
+    }
 }
 
 /// Run `file` as administrator and wait for it. Returns its exit code.
@@ -357,5 +395,13 @@ mod tests {
             sha256(b"abc").unwrap(),
             hex32("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
         );
+    }
+
+    #[test]
+    fn unsigned_file_has_no_signer() {
+        let f = std::env::temp_dir().join(format!("dsz-unsigned-{}.exe", std::process::id()));
+        std::fs::write(&f, b"MZ not really an exe").unwrap();
+        assert_eq!(signer(&f), None);
+        let _ = std::fs::remove_file(&f);
     }
 }
