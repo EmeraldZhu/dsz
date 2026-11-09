@@ -1034,6 +1034,28 @@ impl Pipeline {
         }
     }
 
+    /// Input stopped while the link is still open (a Bluetooth stall). Let
+    /// go of everything, so the game doesn't keep the last stick or button
+    /// held until input comes back or the link drops. The virtual pad stays
+    /// plugged in, idle, with the last real battery and accelerometer.
+    pub fn input_stalled(
+        &mut self,
+        engine: &Arc<Engine>,
+        device: &Arc<Device>,
+        raw: Option<&[u8; ds_proto::virtual_pad::DS_USB_INPUT_LEN]>,
+    ) {
+        self.release_all();
+        if device.virt.active().is_some() {
+            device.virt.submit(&Default::default(), still(raw).as_ref(), false);
+        }
+        if self.helper_sent != 0 {
+            if !device.virt.submit_parked(&crate::virt::companion::pad(0)) {
+                engine.companion.set(device.id, 0);
+            }
+            self.helper_sent = 0;
+        }
+    }
+
     pub fn process(
         &mut self,
         engine: &Arc<Engine>,

@@ -1097,6 +1097,13 @@ fn reader_loop(engine: &Arc<Engine>, device: &Arc<Device>, dev: &HidDevice) {
     let mut sensor_ts: Option<u32> = None;
     let mut last_packet = Instant::now();
     let mut last_kind = 0u8;
+    // A controller sending full reports streams them nonstop, even when
+    // idle, so a silence this long is a stalled link, not a resting pad.
+    // (The short Bluetooth report only comes on a change: not checked.)
+    const INPUT_STALL: Duration = Duration::from_millis(250);
+    let mut streaming = false;
+    let mut stalled = false;
+    let mut last_raw: Option<[u8; ds_proto::virtual_pad::DS_USB_INPUT_LEN]> = None;
 
     while !device.stop.load(Ordering::Acquire) {
         match reader.read(100) {
@@ -1147,6 +1154,12 @@ fn reader_loop(engine: &Arc<Engine>, device: &Arc<Device>, dev: &HidDevice) {
                         device.stats.reports.fetch_add(1, Ordering::Relaxed);
                         count_since += 1;
                         last_input = now;
+                        streaming = state.full;
+                        if stalled {
+                            stalled = false;
+                            log::info!("input is back");
+                            device.flight.note("input back");
+                        }
                         if !state.full
                             && now.duration_since(last_short_retry) > Duration::from_secs(1)
                         {
@@ -1185,6 +1198,7 @@ fn reader_loop(engine: &Arc<Engine>, device: &Arc<Device>, dev: &HidDevice) {
                         };
                         pipeline.process(engine, device, &state, &prev, raw.as_ref(), now);
                         prev = state;
+                        last_raw = raw;
                     }
                     Err(ParseError::BadCrc) => {
                         device.stats.crc_errors.fetch_add(1, Ordering::Relaxed);
@@ -1224,6 +1238,17 @@ fn reader_loop(engine: &Arc<Engine>, device: &Arc<Device>, dev: &HidDevice) {
             }
         }
         let now = Instant::now();
+        if streaming && !stalled && now.duration_since(last_input) > INPUT_STALL {
+            stalled = true;
+            log::info!(
+                "no input for {} ms: the game sees the controller let go until input is back",
+                now.duration_since(last_input).as_millis()
+            );
+            device.flight.note("input stalled: virtual pad idle");
+            pipeline.input_stalled(engine, device, last_raw.as_ref());
+            // Buttons still held when input returns count as new presses.
+            prev = InputState { lx: 128, ly: 128, rx: 128, ry: 128, ..Default::default() };
+        }
         if now.duration_since(last_input) > Duration::from_millis(1500) {
             let mut link = device.link.lock();
             if *link == Link::Live {

@@ -620,6 +620,21 @@ impl Shared {
 
 // ------------------------------------------------------------------ public handle
 
+/// Battery byte of the DualSense USB input report: level in the low nibble
+/// (0..=10), charging state in the high one.
+const DS_BATTERY: usize = 53;
+
+/// The battery an idle virtual DualSense reports: the last real one, or
+/// full when there was none. A zero byte reads as 0 % and discharging, and
+/// games warn about a low battery when a controller drops.
+fn idle_battery(last: u8) -> u8 {
+    if last == 0 {
+        0x0A
+    } else {
+        last
+    }
+}
+
 static SLOTS: Mutex<BTreeSet<u32>> = Mutex::new(BTreeSet::new());
 /// Tags of the virtual DualShock 4s plugged in: two pads with one USB
 /// serial would clash in Windows.
@@ -810,7 +825,11 @@ impl UsbPad {
     /// Centered sticks, nothing pressed.
     pub fn submit_idle(&self) -> io::Result<()> {
         let m = self.shared.model;
-        self.submit(&m.idle_input()[..m.input_len()])
+        let mut r = m.idle_input();
+        if m == Model::DualSense {
+            r[DS_BATTERY] = idle_battery(self.shared.input.lock()[DS_BATTERY]);
+        }
+        self.submit(&r[..m.input_len()])
     }
 
     pub fn audio(&self) -> Arc<AudioRing> {
@@ -1621,6 +1640,19 @@ fn audio_request(s: &Shared, req: u8, unit: u8, selector: u8, data: &[u8]) -> Op
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn idle_dualsense_keeps_a_battery() {
+        // Before any controller: full, not charging.
+        assert_eq!(idle_battery(0), 0x0A);
+        // The last real byte is kept as is: 90 % discharging, 50 % charging.
+        assert_eq!(idle_battery(0x09), 0x09);
+        assert_eq!(idle_battery(0x15), 0x15);
+        // The rest of the idle report is unchanged.
+        let r = Model::DualSense.idle_input();
+        assert_eq!(&r[..9], &[0x01, 0x80, 0x80, 0x80, 0x80, 0, 0, 0, 0x08]);
+        assert!(r[9..].iter().all(|&b| b == 0));
+    }
 
     fn microphone_test_pad() -> Shared {
         test_pad(Model::DualSense)
