@@ -175,7 +175,7 @@ impl App {
                                 .map(|(m, _)| *m == mac)
                                 .unwrap_or(false);
                             if editing {
-                                let buf = &mut self.device_name_edit.as_mut().unwrap().1;
+                                let buf = &mut self.device_name_edit.as_mut().expect("checked by `editing`").1;
                                 let r =
                                     ui.add(egui::TextEdit::singleline(buf).desired_width(180.0));
                                 if button(ui, crate::i18n::tr("Save")).clicked()

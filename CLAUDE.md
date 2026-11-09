@@ -6,6 +6,7 @@ Fork of MaximumFreak/dsz (DSZ, Rust, MIT): wireless DualSense haptics / adaptive
 ## Commands (PowerShell 5: chain with `;`, not `&&`)
 - Build: `cargo build --release -p dsz --locked` → `target\release\dsz.exe`
 - Test: `cargo test --workspace --release --locked` (no new warnings)
+- No unwrap outside tests (CI gate): `cargo clippy --workspace --release --locked -- -A clippy::all -D clippy::unwrap_used`. Use `expect("why it can't fail")` or handle the error
 - Protocol only (any OS): `cargo test -p ds-proto --release`
 - UI snapshot (debug build, no controller): `$env:DSZ_SNAPSHOT='out.bmp'; $env:DSZ_DATA_DIR='tmp'; cargo run -p dsz -- --page <name>`
 - Probe without input injection: `dsz.exe --probe-virtual ...`

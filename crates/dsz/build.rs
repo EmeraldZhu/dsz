@@ -9,11 +9,11 @@ use std::path::{Path, PathBuf};
 mod icon_art;
 
 fn main() {
-    let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+    let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("cargo sets CARGO_MANIFEST_DIR"));
     build_opus(&manifest.join("..").join("..").join("vendor").join("opus"));
     println!("cargo:rerun-if-changed=src/icon_art.rs");
     println!("cargo:rerun-if-changed=assets/pads.json");
-    let out = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let out = PathBuf::from(std::env::var("OUT_DIR").expect("cargo sets OUT_DIR"));
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         embed_resources(&out);
     }
@@ -87,7 +87,7 @@ fn embed_resources(out: &Path) {
         return;
     }
     let mut res = winresource::WindowsResource::new();
-    res.set_icon(ico.to_str().unwrap())
+    res.set_icon(ico.to_str().expect("icon path is UTF-8"))
         .set("FileDescription", "DSZ - DualSense Zen")
         .set("ProductName", "DSZ - DualSense Zen")
         .set("CompanyName", "DSZ")

@@ -192,7 +192,7 @@ impl Server {
                 }
                 if flags & 2 != 0 {
                     if let Some(m) = body.get(2..8) {
-                        c.mac = Some((m.try_into().unwrap(), now));
+                        c.mac = Some((m.try_into().expect("2..8 is 6 bytes"), now));
                     }
                 }
                 self.any_client.store(true, Ordering::Release);

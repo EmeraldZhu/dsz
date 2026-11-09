@@ -218,8 +218,8 @@ pub fn encode(
     for (i, f) in frames.iter_mut().enumerate() {
         let r = i * sbc::SAMPLES..(i + 1) * sbc::SAMPLES;
         enc.encode(
-            left[r.clone()].try_into().unwrap(),
-            right[r].try_into().unwrap(),
+            left[r.clone()].try_into().expect("one SBC block of samples"),
+            right[r].try_into().expect("one SBC block of samples"),
             f,
         );
     }

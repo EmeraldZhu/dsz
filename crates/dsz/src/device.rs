@@ -399,10 +399,9 @@ impl Device {
     pub fn end_game_audio_test(&self, src: &Arc<dyn crate::haptics::game::PcmSource>) {
         let mut g = self.game_audio.lock();
         let mut test = self.game_audio_test.lock();
-        if !test.as_ref().is_some_and(|t| same_source(&t.src, src)) {
+        let Some(t) = test.take_if(|t| same_source(&t.src, src)) else {
             return;
-        }
-        let t = test.take().unwrap();
+        };
         if g.as_ref().is_some_and(|x| same_source(x, src)) {
             *g = t.set_aside;
         }

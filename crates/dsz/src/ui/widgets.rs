@@ -96,7 +96,7 @@ pub fn row<R>(ui: &mut Ui, label: &str, hint: &str, control: impl FnOnce(&mut Ui
             out = Some(control(ui));
         });
     });
-    out.unwrap()
+    out.expect("with_layout runs its closure")
 }
 
 pub fn toggle_row(ui: &mut Ui, label: &str, hint: &str, on: &mut bool) -> bool {

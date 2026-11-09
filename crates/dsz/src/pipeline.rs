@@ -201,7 +201,7 @@ impl Gyro {
                     self.still_sum[k] += raw[k] as f64;
                 }
                 self.still_n += 1;
-                if now.duration_since(self.still_since.unwrap()) > Duration::from_millis(1500)
+                if self.still_since.is_some_and(|t| now.duration_since(t) > Duration::from_millis(1500))
                     && self.still_n > 100
                 {
                     let avg: Vec<f32> = (0..3)

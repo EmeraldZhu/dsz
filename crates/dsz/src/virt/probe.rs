@@ -221,7 +221,7 @@ pub fn probe(what: &str) {
                         std::thread::spawn(move || p.replug().map_err(|e| e.to_string()))
                     })
                     .collect();
-                let results: Vec<_> = racers.into_iter().map(|h| h.join().unwrap()).collect();
+                let results: Vec<_> = racers.into_iter().map(|h| h.join().expect("a replug thread panicked")).collect();
                 let _ = pad.submit_idle();
                 let slot = lit(&pad);
                 let mut p = ds_proto::virtual_pad::PadState::default();
@@ -814,7 +814,7 @@ pub fn probe(what: &str) {
             let t = std::thread::spawn(move || {
                 while !stop2.load(std::sync::atomic::Ordering::Relaxed) {
                     let busy = {
-                        let mut g = w2.lock().unwrap();
+                        let mut g = w2.lock().unwrap_or_else(|e| e.into_inner());
                         g.tick();
                         g.busy()
                     };
@@ -830,7 +830,7 @@ pub fn probe(what: &str) {
                         if *ours { 'V' } else if id == &orig[i].0 { 'o' } else { '?' }
                     })
                     .collect();
-                println!("{step:<34} defaults {marks}  learned {:?}", w.lock().unwrap().prefs.map(|b| b as u8));
+                println!("{step:<34} defaults {marks}  learned {:?}", w.lock().unwrap_or_else(|e| e.into_inner()).prefs.map(|b| b as u8));
             };
             let sink = || usbip::DsSink { on_output: Box::new(|_| {}), mirror: Default::default() };
             let restore = || {

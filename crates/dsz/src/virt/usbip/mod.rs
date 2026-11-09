@@ -265,7 +265,7 @@ pub fn ds4_mac(tag: u16) -> [u8; 6] {
     let s = ds4_serial(tag);
     let mut m = [0u8; 6];
     for i in 0..6 {
-        m[i] = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap();
+        m[i] = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).expect("ds4_serial is hex digits");
     }
     m
 }
@@ -1274,7 +1274,7 @@ fn submit(s: &Shared, u: Submit) {
             let mut g = s.conn.lock();
             if let Some(c) = g.as_mut() {
                 c.capture.admit(u.seq, u.iso_lens, Instant::now(), s.epoch);
-                c.capture.q.back_mut().unwrap().capture_offsets = u.iso_offsets;
+                c.capture.q.back_mut().expect("admitted just above").capture_offsets = u.iso_offsets;
             }
         }
         _ => {
@@ -1306,7 +1306,7 @@ fn clock(s: &Arc<Shared>) {
             let mut g = s.conn.lock();
             if let Some(c) = g.as_mut() {
                 while c.render.q.front().map(|j| j.due <= now).unwrap_or(false) {
-                    let j = c.render.q.pop_front().unwrap();
+                    let j = c.render.q.pop_front().expect("front checked by the loop");
                     descs.clear();
                     let mut off = 0;
                     for &l in &j.lens {
@@ -1316,7 +1316,7 @@ fn clock(s: &Arc<Shared>) {
                     c.ret(j.seq, 0, off, j.frame, Some(&descs), &[]);
                 }
                 while c.capture.q.front().map(|j| j.due <= now).unwrap_or(false) {
-                    let j = c.capture.q.pop_front().unwrap();
+                    let j = c.capture.q.pop_front().expect("front checked by the loop");
                     let gain = s.ctl.lock().microphone_gain();
                     capture_packets(
                         &s.microphone,
@@ -1344,7 +1344,7 @@ fn clock(s: &Arc<Shared>) {
                 if let (false, Some(every)) = (c.int_in.is_empty(), s.model.keepalive()) {
                     let due = c.last_input + every;
                     if due <= now {
-                        let seq = c.int_in.pop_front().unwrap();
+                        let seq = c.int_in.pop_front().expect("checked non-empty above");
                         let (rep, n) = s.input_now();
                         c.complete_input(seq, &rep[..n]);
                     } else {

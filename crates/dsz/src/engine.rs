@@ -89,13 +89,17 @@ pub struct ProfileCache {
 impl ProfileCache {
     pub fn get(&mut self, engine: &Engine, device: &Device) -> Arc<Profile> {
         let key = (engine.profiles.revision(), engine.settings_revision());
-        if key != self.key || self.profile.is_none() {
-            let name = engine.profile_name_for(device);
-            self.profile = Some(engine.profiles.get_or_first(&name));
-            self.name = name;
-            self.key = key;
+        match &self.profile {
+            Some(p) if key == self.key => p.clone(),
+            _ => {
+                let name = engine.profile_name_for(device);
+                let p = engine.profiles.get_or_first(&name);
+                self.profile = Some(p.clone());
+                self.name = name;
+                self.key = key;
+                p
+            }
         }
-        self.profile.clone().unwrap()
     }
 }
 
@@ -410,22 +414,22 @@ impl Engine {
         std::thread::Builder::new()
             .name("hotplug".into())
             .spawn(move || e.hotplug_loop())
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("saver".into())
             .spawn(move || e.saver_loop())
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("games".into())
             .spawn(move || crate::games::run(e))
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("udp".into())
             .spawn(move || crate::udp::run(e))
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let w = Arc::downgrade(self);
         std::thread::Builder::new()
             .name("audio-defaults".into())
@@ -447,27 +451,27 @@ impl Engine {
                     std::thread::sleep(Duration::from_millis(if watcher.busy() { 100 } else { 500 }));
                 }
             })
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("xbox-helper".into())
             .spawn(move || crate::virt::companion::run(e))
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("gamebar".into())
             .spawn(move || crate::virt::gamebar::run(e))
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("dsu".into())
             .spawn(move || crate::dsu::run(e))
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
         let e = self.clone();
         std::thread::Builder::new()
             .name("updates".into())
             .spawn(move || crate::update::run(e))
-            .unwrap();
+            .expect("couldn't start a background thread at startup");
     }
 
     fn hotplug_loop(self: Arc<Self>) {
@@ -484,11 +488,16 @@ impl Engine {
                 let id = self.next_id.fetch_add(1, Ordering::Relaxed);
                 let e = self.clone();
                 let path = info.path.clone();
-                let h = std::thread::Builder::new()
+                // Out of threads: try again on the next pass.
+                match std::thread::Builder::new()
                     .name(format!("device-{id}"))
                     .spawn(move || crate::device::run(e, info, id))
-                    .unwrap();
-                running.insert(path, h);
+                {
+                    Ok(h) => {
+                        running.insert(path, h);
+                    }
+                    Err(err) => log::warn!("couldn't start a thread for {path}: {err}"),
+                }
             }
             // Clear a stale failure once a device opens fine.
             {

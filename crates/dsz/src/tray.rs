@@ -309,5 +309,5 @@ pub fn start(engine: Arc<Engine>, on_show: impl Fn() + Send + Sync + 'static) {
             }
             Shell_NotifyIconW(NIM_DELETE, &nid);
         })
-        .unwrap();
+        .expect("couldn't start the tray thread");
 }

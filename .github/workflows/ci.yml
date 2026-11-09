@@ -29,7 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
       - uses: Swatinem/rust-cache@v2
+      - name: No unwrap outside tests
+        run: cargo clippy --workspace --release --locked -- -A clippy::all -D clippy::unwrap_used
       - name: Test
         run: cargo test --workspace --release --locked
       - name: Build release exe

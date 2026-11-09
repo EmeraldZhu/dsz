@@ -51,8 +51,8 @@ pub fn install(ctx: &egui::Context, scale: f32) {
             .insert("segoe".into(), Arc::new(FontData::from_owned(bytes)));
         fonts
             .families
-            .get_mut(&FontFamily::Proportional)
-            .unwrap()
+            .entry(FontFamily::Proportional)
+            .or_default()
             .insert(0, "segoe".into());
     }
     let mut sb = Vec::new();
@@ -72,8 +72,8 @@ pub fn install(ctx: &egui::Context, scale: f32) {
             .insert("segoe_sym".into(), Arc::new(FontData::from_owned(bytes)));
         fonts
             .families
-            .get_mut(&FontFamily::Proportional)
-            .unwrap()
+            .entry(FontFamily::Proportional)
+            .or_default()
             .push("segoe_sym".into());
         sb.push("segoe_sym".into());
     }
@@ -83,8 +83,8 @@ pub fn install(ctx: &egui::Context, scale: f32) {
             .insert("consolas".into(), Arc::new(FontData::from_owned(bytes)));
         fonts
             .families
-            .get_mut(&FontFamily::Monospace)
-            .unwrap()
+            .entry(FontFamily::Monospace)
+            .or_default()
             .insert(0, "consolas".into());
     }
     sb.extend(fallback_prop);

@@ -97,7 +97,7 @@ pub fn speaker(secs: u64) -> String {
     }) else {
         return format!("{out}No DualSense over Bluetooth found (is DSZ still running and hiding it?)");
     };
-    let model = Model::from_pid(info.pid).unwrap();
+    let model = Model::from_pid(info.pid).expect("filtered to known models above");
     let _ = writeln!(
         out,
         "{} over Bluetooth: input {} B, output {} B, feature {} B",
@@ -360,13 +360,13 @@ pub fn speaker_ab(only: Option<usize>, secs: u64, mic_off_at: Option<Duration>) 
                     if let Ok(Some(b)) = r.read(50) {
                         let v = current.load(Ordering::Acquire);
                         if v != 0 && b.len() >= 78 && b[0] == 0x31 && b[1] & 0x0F == 1 {
-                            gaps.lock().unwrap().entry(v).or_default().tick(Instant::now());
+                            gaps.lock().unwrap_or_else(|e| e.into_inner()).entry(v).or_default().tick(Instant::now());
                         }
                         if b.len() >= 78 && b[0] == 0x31 && b[1] & 0x0F == 2 && v != 0 {
-                            mic_times.lock().unwrap().push((v, Instant::now()));
+                            mic_times.lock().unwrap_or_else(|e| e.into_inner()).push((v, Instant::now()));
                             let mut p = [0u8; super::mic::MIC_PACKET];
                             p.copy_from_slice(&b[3..74]);
-                            mic.lock().unwrap().push((v, b[2], p));
+                            mic.lock().unwrap_or_else(|e| e.into_inner()).push((v, b[2], p));
                         }
                     }
                 }
@@ -485,11 +485,11 @@ pub fn speaker_ab(only: Option<usize>, secs: u64, mic_off_at: Option<Duration>) 
             );
             current.store(0, Ordering::Release);
             let id = n as u8 + 1;
-            if let Some(g) = gaps.lock().unwrap().get(&id) {
+            if let Some(g) = gaps.lock().unwrap_or_else(|e| e.into_inner()).get(&id) {
                 let _ = writeln!(out, "  {}", g.summary(start.elapsed().as_secs_f32()));
                 // Times from the first mic packet, to line up with the
                 // dropout times below.
-                let t0 = mic_times.lock().unwrap().iter().find(|x| x.0 == id).map(|x| x.1).unwrap_or(start);
+                let t0 = mic_times.lock().unwrap_or_else(|e| e.into_inner()).iter().find(|x| x.0 == id).map(|x| x.1).unwrap_or(start);
                 let mut line = String::from("  state gaps over 20 ms ending at");
                 for (at, d) in &g.long {
                     let _ = write!(line, " {:.2}s ({:.0})", at.saturating_duration_since(t0).as_secs_f32(), d.as_secs_f32() * 1000.0);
@@ -497,7 +497,7 @@ pub fn speaker_ab(only: Option<usize>, secs: u64, mic_off_at: Option<Duration>) 
                 let _ = writeln!(out, "{line}");
             }
             if let Some(at) = mic_off_at {
-                let t = mic_times.lock().unwrap();
+                let t = mic_times.lock().unwrap_or_else(|e| e.into_inner());
                 let split = start + at;
                 let before = t.iter().filter(|x| x.0 == id && x.1 < split).count();
                 let after = t.iter().filter(|x| x.0 == id && x.1 >= split + Duration::from_millis(200)).count();
@@ -508,7 +508,7 @@ pub fn speaker_ab(only: Option<usize>, secs: u64, mic_off_at: Option<Duration>) 
                 );
             }
             {
-                let m = mic.lock().unwrap();
+                let m = mic.lock().unwrap_or_else(|e| e.into_inner());
                 let pk: Vec<super::mic::Packet> =
                     m.iter().filter(|x| x.0 == n as u8 + 1).map(|x| (x.1, x.2)).collect();
                 let as_vec: Vec<(u8, Vec<u8>)> = pk.iter().map(|x| (n as u8 + 1, x.1.to_vec())).collect();
@@ -624,7 +624,7 @@ pub fn mic_listen(secs: u64) -> String {
     let mut state = Gaps::default();
     // (arrival, controller sensor timestamp) per state report.
     let mut arrivals: Vec<(Instant, u32)> = Vec::new();
-    let model = Model::from_pid(info.pid).unwrap();
+    let model = Model::from_pid(info.pid).expect("filtered to known models above");
     let start = Instant::now();
     while start.elapsed() < Duration::from_secs(secs) {
         match r.read(100) {

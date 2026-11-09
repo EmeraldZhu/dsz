@@ -81,7 +81,7 @@ impl AudioHub {
             std::thread::Builder::new()
                 .name("audio-capture".into())
                 .spawn(move || hub.run())
-                .unwrap();
+                .expect("couldn't start the audio capture thread");
         }
         sub
     }

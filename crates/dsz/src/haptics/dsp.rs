@@ -148,7 +148,7 @@ pub fn resample_window(prev: &mut [f32; 2], input: &[[f32; 2]], out: &mut [[f32;
         let b = input[((i0 + 1).max(0) as usize).min(input.len() - 1)];
         *o = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
     }
-    *prev = *input.last().unwrap();
+    *prev = *input.last().expect("checked non-empty above");
 }
 
 /// Streaming 16:15 resampler for the controller speaker: 1024 frames of

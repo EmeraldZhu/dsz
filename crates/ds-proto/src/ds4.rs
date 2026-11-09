@@ -255,7 +255,7 @@ const KNOWN: &[Known] = &[
 pub fn identify(vid: u16, pid: u16) -> Option<ControllerKind> {
     if vid == SONY_VID && (pid == DUALSENSE_PID || pid == DUALSENSE_EDGE_PID) {
         return Some(ControllerKind {
-            model: Model::from_pid(pid).unwrap(),
+            model: Model::from_pid(pid).expect("a DualSense PID, checked above"),
             has_motion: true,
             has_output: true,
         });

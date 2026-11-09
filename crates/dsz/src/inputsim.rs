@@ -262,7 +262,7 @@ pub fn vk_from_egui(k: eframe::egui::Key) -> Option<u16> {
     use eframe::egui::Key as K;
     let name = k.name();
     if name.len() == 1 {
-        let c = name.chars().next().unwrap().to_ascii_uppercase();
+        let c = name.chars().next().expect("a one-character name").to_ascii_uppercase();
         if c.is_ascii_alphanumeric() {
             return Some(c as u16);
         }

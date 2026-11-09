@@ -199,7 +199,7 @@ impl App {
             }
             self.virt_drivers = Some((Instant::now(), info));
         }
-        self.virt_drivers.as_ref().unwrap().1.clone()
+        self.virt_drivers.as_ref().expect("filled just above").1.clone()
     }
 
     pub(crate) fn page_virtual(
