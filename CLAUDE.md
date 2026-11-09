@@ -23,7 +23,7 @@ Fork of MaximumFreak/dsz (DSZ, Rust, MIT): wireless DualSense haptics / adaptive
 - Commit after each logical step on the working branch; don't push without asking.
 
 ## Phase plan (details in `docs/AUDIT.md` §6)
-0. **Baseline** — builds locally + CI green; hardware tests 1–11 logged. *Don't start Phase 1 until done.*
+0. **Baseline** — builds locally + CI green; hardware tests 1–9 and 11 logged (test 10, battery, parked: log it before Phase 3). *Don't start Phase 1 until done.*
 1. **Harden** — revocation checks (Z2), UDP mod API toggle off by default (Z3), clippy `unwrap_used` outside tests (Z7).
 2. **BDM-060 support** — log board/firmware (`0x20`/`0x22`); capture real USB descriptors for the virtual pad.
 3. **Transport A/B** — experimental Opus-in-`0x36` haptics vs raw `0x32` PCM; measure.

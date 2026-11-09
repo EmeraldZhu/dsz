@@ -52,7 +52,7 @@
 ## 6. Phased build plan (DSZ fork)
 | Phase | Goal | Work | Done when |
 |---|---|---|---|
-| **0. Baseline** (now) | Your fork builds | Push the branch, let CI build, download the artifact, run `docs/hardware-test-plan.md` on your PC | CI green; tests 1–11 recorded for BDM-060R |
+| **0. Baseline** (now) | Your fork builds | Push the branch, let CI build, download the artifact, run `docs/hardware-test-plan.md` on your PC | CI green; tests 1–9 and 11 recorded for BDM-060R (test 10, battery, parked 2026-11-09; due before Phase 3) |
 | **1. Harden** | Close the remaining findings | Revocation checks (Z2 rest); optional UDP mod API off-by-default toggle (Z3); clippy `unwrap_used` outside tests (Z7) | No open Medium findings |
 | **2. BDM-060 support** | Your board first-class | Log board/firmware from feature `0x20`/`0x22`; **borrow DS-HapticLink's cable-profile capture**: on first USB connect, save the real descriptors and feature reports and use them for the virtual pad | The virtual pad reports the real model; tests 4–7 pass |
 | **3. Transport A/B** | Best haptics over BT | **Borrow DualSenseClient's idea**: an experimental Opus-in-`0x36` haptics mode alongside the raw `0x32` PCM; measure gaps and battery on BDM-060 | Data-backed default per board |
