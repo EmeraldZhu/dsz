@@ -334,14 +334,19 @@ fn parse(msg: &[u8]) -> Option<(u32, &[u8])> {
         return None;
     }
     let len = u16::from_le_bytes([msg[6], msg[7]]) as usize;
+    // The length counts the 4-byte message type; a shorter one would cut
+    // the packet before the type.
+    if len < 4 {
+        return None;
+    }
     let msg = msg.get(..16 + len)?;
-    let crc = u32::from_le_bytes(msg[8..12].try_into().unwrap());
+    let crc = u32::from_le_bytes([msg[8], msg[9], msg[10], msg[11]]);
     let mut copy = msg.to_vec();
     copy[8..12].fill(0);
     if crc32(&copy) != crc {
         return None;
     }
-    let ty = u32::from_le_bytes(msg[16..20].try_into().unwrap());
+    let ty = u32::from_le_bytes([msg[16], msg[17], msg[18], msg[19]]);
     Some((ty, &msg[20..]))
 }
 
@@ -486,6 +491,21 @@ mod tests {
         assert_eq!(parse(&p), Some((MSG_INFO, &[1u8, 0, 0, 0, 0][..])));
         p[20] ^= 1;
         assert_eq!(parse(&p), None, "a bad CRC is dropped");
+    }
+
+    #[test]
+    fn a_length_shorter_than_the_type_is_dropped() {
+        // Valid CRC over the shortened packet, so only the length check
+        // stands between it and reading past the end.
+        for len in 0..4u16 {
+            let mut p = packet(7, MSG_INFO, &[1, 0, 0, 0, 0]);
+            p[..4].copy_from_slice(b"DSUC");
+            p[6..8].copy_from_slice(&len.to_le_bytes());
+            p[8..12].fill(0);
+            let crc = crc32(&p[..16 + len as usize]);
+            p[8..12].copy_from_slice(&crc.to_le_bytes());
+            assert_eq!(parse(&p), None, "length {len}");
+        }
     }
 
     #[test]
